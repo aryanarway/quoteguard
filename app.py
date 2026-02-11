@@ -73,18 +73,24 @@ st.sidebar.header("Upload")
 uploaded = st.sidebar.file_uploader("Upload CSV", type=["csv"])
 use_manual_thresholds = st.sidebar.toggle("Use manual thresholds", value=False)
 
+st.sidebar.header("Demo")
+use_demo = st.sidebar.button("Use Sample Insurance Data")
+
 st.sidebar.header("Export")
 export_filename = st.sidebar.text_input("Export filename", value="quoteguard_tiers.csv")
 
 # --- Main ---
-if not uploaded:
-    st.info("Upload a CSV to begin. Recommended columns: premium/quote amount, optional customer fields.")
+if uploaded:
+    raw = uploaded.read()
+    df = pd.read_csv(io.BytesIO(raw))
+
+elif use_demo:
+    df = pd.read_csv("https://raw.githubusercontent.com/stedy/Machine-Learning-with-R-datasets/master/insurance.csv")
+    st.success("Loaded sample insurance dataset for demonstration.")
+
+else:
+    st.info("Upload a CSV or click 'Use Sample Insurance Data' to try the demo.")
     st.stop()
-
-# Read CSV
-raw = uploaded.read()
-df = pd.read_csv(io.BytesIO(raw))
-
 st.subheader("Preview")
 st.dataframe(df.head(50), use_container_width=True)
 
