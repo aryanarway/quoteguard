@@ -25,22 +25,32 @@ def find_numeric_cols(df: pd.DataFrame):
     return numeric_cols
 
 def pick_default_amount_col(df: pd.DataFrame):
-    """Try to guess the best 'amount' column (premium/quote/price)."""
-    candidates = []
+    """
+    Prefer common premium column names first (e.g., 'charges'),
+    then fall back to keyword matches, then the first numeric column.
+    """
+    numeric_cols = find_numeric_cols(df)
+
+    # 1) Strong preferences (exact matches)
+    preferred = ["charges", "premium", "quote", "price", "amount", "cost"]
+    lower_map = {str(c).lower(): c for c in df.columns}
+
+    for name in preferred:
+        if name in lower_map and lower_map[name] in numeric_cols:
+            return lower_map[name]
+
+    # 2) Keyword matches
     for c in df.columns:
         name = str(c).lower()
-        if any(k in name for k in ["premium", "quote", "price", "amount", "cost", "annual"]):
-            candidates.append(c)
-    numeric_cols = find_numeric_cols(df)
-    # Prioritize candidates that are numeric
-    for c in candidates:
-        if c in numeric_cols:
-            return c
-    # Otherwise pick first numeric col
+        if any(k in name for k in ["charges", "premium", "quote", "price", "amount", "cost"]):
+            if c in numeric_cols:
+                return c
+
+    # 3) Fallback
     if numeric_cols:
         return numeric_cols[0]
-    return None
 
+    return None
 def compute_thresholds(series: pd.Series):
     s = pd.to_numeric(series, errors="coerce").dropna()
     if len(s) < 5:
